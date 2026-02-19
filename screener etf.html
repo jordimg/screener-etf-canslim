@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CANSLIM · ETF REAL SCREENER (DATOS REALES)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background: #f4f7fc; margin: 0; padding: 20px; color: #1a2639; }
+        .container { max-width: 1600px; margin: 0 auto; }
+        .header {
+            background: linear-gradient(145deg, #0b1f33, #0e2a3a); color: white;
+            padding: 18px 28px; border-radius: 24px 24px 12px 12px;
+            box-shadow: 0 12px 20px -8px rgba(0,20,40,0.3); margin-bottom: 25px;
+            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+        }
+        .header h1 { margin: 0; font-weight: 500; font-size: 2.1rem; }
+        .header h1 i { color: #ffd966; margin-right: 10px; }
+        .badge { background: #1f4b6e; padding: 10px 22px; border-radius: 40px; font-size: 1rem; border: 1px solid #3d7ca3; }
+        .badge i { margin-right: 8px; color: #aad3ff; }
+        .updated { background: #1c3d5a; padding: 6px 16px; border-radius: 30px; font-size: 0.9rem; }
+
+        .filter-grid {
+            background: white; border-radius: 24px; padding: 20px 25px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.03); margin-bottom: 30px;
+            display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: flex-end;
+            border: 1px solid #e0e8f2;
+        }
+        .filter-item {
+            display: flex; flex-direction: column; min-width: 160px; flex: 1 0 auto;
+        }
+        .filter-item label {
+            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;
+            font-weight: 600; color: #3f5575; margin-bottom: 4px;
+        }
+        .filter-item input, .filter-item select {
+            background: #f8faff; border: 1px solid #ccd7e8; border-radius: 12px;
+            padding: 10px 16px; font-size: 0.9rem; outline: none;
+        }
+        .filter-item input:focus, .filter-item select:focus {
+            border-color: #2b6a9e; box-shadow: 0 0 0 3px rgba(0,105,180,0.15);
+        }
+        .search-btn {
+            background: #1e3b5c; border: none; color: white; padding: 10px 30px;
+            border-radius: 30px; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; gap: 8px; margin-left: auto;
+            border: 1px solid #3d658b;
+        }
+        .search-btn:hover { background: #254f77; transform: scale(1.02); }
+        .search-btn:disabled { opacity: 0.6; cursor: wait; }
+
+        .table-wrapper {
+            background: white; border-radius: 24px; padding: 5px 5px 5px 20px;
+            box-shadow: 0 20px 35px -8px rgba(19,35,60,0.15); overflow-x: auto;
+            border: 1px solid #e2eaf5;
+        }
+        table {
+            width: 100%; border-collapse: collapse; font-size: 0.85rem;
+            min-width: 1700px; white-space: nowrap;
+        }
+        th {
+            background: #f1f6fd; color: #0a2844; font-weight: 600; padding: 16px 8px;
+            text-align: left; border-bottom: 2px solid #cbd6e8; font-size: 0.8rem;
+            text-transform: uppercase; letter-spacing: 0.3px;
+        }
+        td { padding: 14px 8px; border-bottom: 1px solid #e9eef5; color: #1e3349; }
+        tr:hover td { background-color: #f2f9ff; cursor: pointer; }
+        .true-badge {
+            background: #c6e2b9; color: #1f4f2b; font-weight: 700; padding: 4px 10px;
+            border-radius: 30px; font-size: 0.75rem; display: inline-block; min-width: 52px;
+        }
+        .false-badge {
+            background: #f1d7d7; color: #9b3e3e; padding: 4px 10px; border-radius: 30px;
+            font-size: 0.75rem; display: inline-block;
+        }
+        .numeric { font-weight: 600; color: #113355; }
+        .rating-high { background: #fee9b8; padding: 3px 10px; border-radius: 40px; font-weight: 700; }
+        .footer-note {
+            margin-top: 20px; font-size: 0.8rem; color: #587291;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .loading-message {
+            text-align: center; padding: 50px; font-size: 1.2rem; color: #2b4f73;
+        }
+        .asset-equity { color:#0f5c4b; font-weight:500; }
+        .asset-fixed { color:#a24d27; font-weight:500; }
+        .asset-commodity { color:#aa7733; }
+        .warning-message {
+            background: #fff3cd; border: 1px solid #ffe6a6; color: #856404;
+            padding: 12px 20px; border-radius: 40px; margin-bottom: 20px;
+        }
+        .success-message {
+            background: #d4edda; border: 1px solid #c3e6cb; color: #155724;
+            padding: 12px 20px; border-radius: 40px; margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-chart-line"></i> CANSLIM · ETF REAL SCREENER (DATOS REALES)</h1>
+        <div style="display: flex; gap: 15px;">
+            <span class="badge"><i class="fas fa-database"></i> live data · servidor local</span>
+            <span class="updated" id="timestamp"><i class="far fa-clock"></i> cargando...</span>
+        </div>
+    </div>
+
+    <div id="messageContainer"></div>
+
+    <div class="filter-grid">
+        <div class="filter-item">
+            <label>🔍 Buscar Ticker</label>
+            <input type="text" id="searchTicker" placeholder="SPY, QQQ, ..." autocomplete="off">
+        </div>
+        <div class="filter-item">
+            <label> Clase de Activo </label>
+            <select id="assetClass">
+                <option value="ALL">Todos</option>
+                <option value="Equity">Renta Variable</option>
+                <option value="Fixed Income">Renta Fija</option>
+                <option value="Commodity">Materias Primas</option>
+            </select>
+        </div>
+        <div class="filter-item">
+            <label> AUM Mínimo ($M) </label>
+            <input type="number" id="minAUM" value="1000" min="0" step="100">
+        </div>
+        <div class="filter-item">
+            <label> Volumen Mínimo (M) </label>
+            <input type="number" id="minVolume" value="1" min="0" step="0.5">
+        </div>
+        <div class="filter-item">
+            <label> % cerca de máximo 52sem </label>
+            <input type="number" id="minClosePercent" value="90" min="0" max="100" step="1">
+        </div>
+        <button class="search-btn" id="filterBtn"><i class="fas fa-sync-alt"></i> Cargar datos reales</button>
+    </div>
+
+    <div class="table-wrapper">
+        <table id="etfTable">
+            <thead>
+                <tr>
+                    <th>Ticker</th><th>ETF Name</th><th>Asset</th><th>Lwowski*</th><th>Price</th>
+                    <th>>52w high</th><th>SMA50>150</th><th>SMA150>200</th>
+                    <th>SMA200+</th><th>AUM ($M)</th><th>RSI</th><th>% 52w high</th>
+                    <th>52w high</th><th>Prev Close</th><th>Vol (M)</th><th>Expense %</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="16" class="loading-message"><i class="fas fa-spinner fa-pulse"></i> Haz click en "Cargar datos reales" para conectar con el servidor</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="footer-note">
+        <span><i class="fas fa-info-circle"></i> Click en fila para abrir TradingView. *Lwowski = proxy AUM×Volumen.</span>
+        <span><i class="fas fa-check-circle" style="color:#2a7f49;"></i> Conectado a servidor local:8080</span>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // Elementos del DOM
+        const tbody = document.getElementById('tableBody');
+        const filterBtn = document.getElementById('filterBtn');
+        const searchInput = document.getElementById('searchTicker');
+        const assetSelect = document.getElementById('assetClass');
+        const minAUM = document.getElementById('minAUM');
+        const minVolume = document.getElementById('minVolume');
+        const minClosePercent = document.getElementById('minClosePercent');
+        const timestampSpan = document.getElementById('timestamp');
+        const messageContainer = document.getElementById('messageContainer');
+
+        // Variables globales
+        let allETFData = [];
+        let serverAvailable = false;
+
+        // Actualizar timestamp
+        function updateTimestamp() {
+            const now = new Date();
+            timestampSpan.innerHTML = `<i class="far fa-clock"></i> Actualizado: ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+        }
+
+        // Mostrar mensaje
+        function showMessage(text, type = 'warning') {
+            const className = type === 'success' ? 'success-message' : 'warning-message';
+            messageContainer.innerHTML = `<div class="${className}"><i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i> ${text}</div>`;
+        }
+
+        function clearMessage() {
+            messageContainer.innerHTML = '';
+        }
+
+        // Verificar si el servidor está disponible
+        async function checkServerHealth() {
+            try {
+                const response = await fetch('http://localhost:5000/api/health', {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (response.ok) {
+                    serverAvailable = true;
+                    showMessage('✅ Servidor local conectado correctamente', 'success');
+                    return true;
+                }
+            } catch (error) {
+                console.error('Servidor no disponible:', error);
+                serverAvailable = false;
+                showMessage('⚠️ Servidor local no disponible. Asegúrate de ejecutar "python3 server_fixed.py"');
+                return false;
+            }
+        }
+
+        // Cargar datos reales desde el servidor
+        async function loadRealData() {
+            tbody.innerHTML = `<tr><td colspan="16" class="loading-message"><i class="fas fa-spinner fa-pulse"></i> Conectando con servidor local...</td></tr>`;
+            filterBtn.disabled = true;
+            
+            try {
+                // Verificar servidor primero
+                const healthOk = await checkServerHealth();
+                if (!healthOk) {
+                    throw new Error('Servidor no disponible');
+                }
+
+                // Cargar datos
+                const response = await fetch('http://localhost:5000/api/etfs', {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                
+                const json = await response.json();
+                
+                if (json.status === 'success' && json.data) {
+                    allETFData = json.data;
+                    showMessage(`✅ ${json.count} ETFs cargados correctamente desde servidor local`, 'success');
+                    applyClientFilters();
+                    updateTimestamp();
+                } else {
+                    throw new Error(json.message || 'Error desconocido');
+                }
+                
+            } catch (error) {
+                console.error('Error cargando datos:', error);
+                showMessage(`❌ Error: ${error.message}. Verifica que el servidor esté corriendo (python3 server_fixed.py)`);
+                tbody.innerHTML = `<tr><td colspan="16" class="loading-message">
+                    <i class="fas fa-exclamation-triangle" style="color:#dc3545;"></i> 
+                    Error de conexión. Asegúrate de que el servidor esté ejecutándose en http://localhost:5000
+                </td></tr>`;
+            } finally {
+                filterBtn.disabled = false;
+            }
+        }
+
+        // Aplicar filtros del cliente
+        function applyClientFilters() {
+            if (!allETFData || allETFData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="16" class="loading-message">No hay datos para filtrar</td></tr>`;
+                return;
+            }
+
+            const search = searchInput.value.trim().toUpperCase();
+            const asset = assetSelect.value;
+            const aumMin = parseFloat(minAUM.value) || 0;
+            const volMin = parseFloat(minVolume.value) || 0;
+            const closeMinPct = parseFloat(minClosePercent.value) || 0;
+
+            const filtered = allETFData.filter(etf => {
+                // Filtro por ticker
+                if (search && !etf.ticker.toUpperCase().includes(search) && !etf.name.toUpperCase().includes(search)) {
+                    return false;
+                }
+                
+                // Filtro por clase de activo
+                if (asset !== 'ALL' && etf.asset !== asset) return false;
+                
+                // Filtro por AUM (convertir string a número)
+                const aumNum = parseFloat(etf.aum) || 0;
+                if (aumNum < aumMin) return false;
+                
+                // Filtro por volumen
+                const volNum = parseFloat(etf.volume) || 0;
+                if (volNum < volMin) return false;
+                
+                // Filtro por % cerca del máximo
+                const nearPct = parseFloat(etf.near52wpct) || 0;
+                if (nearPct < closeMinPct) return false;
+                
+                return true;
+            });
+
+            renderTable(filtered);
+        }
+
+        // Renderizar tabla
+        function renderTable(data) {
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="16" class="loading-message">🔍 No hay ETFs que cumplan los filtros</td></tr>`;
+                return;
+            }
+
+            let html = '';
+            data.forEach(etf => {
+                const trueIcon = '<span class="true-badge"><i class="fas fa-check"></i> Sí</span>';
+                const falseIcon = '<span class="false-badge">No</span>';
+                
+                html += `<tr data-ticker="${etf.ticker}">
+                    <td><strong>${etf.ticker}</strong></td>
+                    <td>${etf.name}</td>
+                    <td class="${etf.asset === 'Equity' ? 'asset-equity' : (etf.asset === 'Fixed Income' ? 'asset-fixed' : 'asset-commodity')}">${etf.asset}</td>
+                    <td class="numeric"><span class="rating-high">${etf.lwowski}</span></td>
+                    <td class="numeric">$${etf.price.toFixed(2)}</td>
+                    <td>${etf.closeAbove52w ? trueIcon : falseIcon}</td>
+                    <td>${etf.sma50gt150 ? trueIcon : falseIcon}</td>
+                    <td>${etf.sma150gt200 ? trueIcon : falseIcon}</td>
+                    <td>${etf.sma200Slope ? trueIcon : falseIcon}</td>
+                    <td class="numeric">${etf.aum}</td>
+                    <td class="numeric">${etf.rsi}</td>
+                    <td class="numeric">${etf.near52wpct}%</td>
+                    <td class="numeric">$${etf.week52High.toFixed(2)}</td>
+                    <td class="numeric">$${etf.prevClose.toFixed(2)}</td>
+                    <td class="numeric">${etf.volume}M</td>
+                    <td class="numeric">${etf.expense.toFixed(2)}%</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        // Event listeners
+        filterBtn.addEventListener('click', () => {
+            loadRealData();
+        });
+
+        // Búsqueda en tiempo real (cuando ya hay datos cargados)
+        searchInput.addEventListener('keyup', () => {
+            if (allETFData.length > 0) applyClientFilters();
+        });
+        
+        assetSelect.addEventListener('change', () => {
+            if (allETFData.length > 0) applyClientFilters();
+        });
+        
+        minAUM.addEventListener('input', () => {
+            if (allETFData.length > 0) applyClientFilters();
+        });
+        
+        minVolume.addEventListener('input', () => {
+            if (allETFData.length > 0) applyClientFilters();
+        });
+        
+        minClosePercent.addEventListener('input', () => {
+            if (allETFData.length > 0) applyClientFilters();
+        });
+
+        // Click en fila para TradingView
+        tbody.addEventListener('click', (e) => {
+            const row = e.target.closest('tr');
+            if (row && row.dataset.ticker) {
+                const ticker = row.dataset.ticker;
+                window.open(`https://www.tradingview.com/chart/?symbol=${ticker}`, '_blank');
+            }
+        });
+
+        // Verificar servidor al cargar la página
+        window.addEventListener('load', () => {
+            checkServerHealth();
+        });
+
+    })();
+</script>
+</body>
+</html>
